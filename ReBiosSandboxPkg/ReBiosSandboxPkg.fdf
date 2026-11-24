@@ -1,6 +1,7 @@
 ## @file
-#  ReBIOS's sandbox firmware: one firmware volume, which ReBIOS places at
-#  FD_BASE in the sandbox's memory, where its SEC module runs in place.
+#  ReBIOS's sandbox firmware: one firmware volume, built for FD_BASE, which
+#  ReBIOS places wherever the sandbox's memory is, relocating its SEC module,
+#  which runs in place, there by the relocations it keeps.
 #
 #  Copyright (c) 2026, Mintsuki and contributors.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -69,7 +70,7 @@
   INF ReBiosSandboxPkg/SandboxBdsDxe/SandboxBdsDxe.inf
 
 [Rule.Common.SEC]
-  FILE SEC = $(NAMED_GUID) RELOCS_STRIPPED {
+  FILE SEC = $(NAMED_GUID) RELOCS_RETAINED {
     PE32  PE32  Align = Auto  $(INF_OUTPUT)/$(MODULE_NAME).efi
     UI    STRING = "$(MODULE_NAME)" Optional
   }

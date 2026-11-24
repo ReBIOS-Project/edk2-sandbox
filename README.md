@@ -8,7 +8,9 @@ also once a native driver of the OS has had the card, and as the machine
 wakes from sleep.
 
 The platform is paravirtual: it reaches ReBIOS for time, PCI configuration
-space, and its log through hypercalls, and has no emulated devices. A GOP
+space, and its log through hypercalls, and has no emulated devices. ReBIOS
+runs it with the machine's whole address space at its own addresses, wherever
+the memory ReBIOS gives it is, relocating its SEC module there. A GOP
 built into the platform firmware, as an iGPU's, reads that firmware's dynamic
 PCDs, which ReBIOS gives the sandbox as it found them, in place of a PCD
 database of the sandbox's own. The log names each protocol that a GOP looks
