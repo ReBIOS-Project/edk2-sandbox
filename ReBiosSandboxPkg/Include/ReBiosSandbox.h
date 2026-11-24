@@ -68,7 +68,8 @@ typedef struct {
 } REBIOS_SANDBOX_RANGE;
 
 ///
-/// The mode the GOP is to set: the one the firmware left the display in.
+/// The mode the GOP is to set, by its resolution and pixel format, in the
+/// handoff; in the result, the mode it set.
 ///
 typedef struct {
   UINT32    HorizontalResolution;

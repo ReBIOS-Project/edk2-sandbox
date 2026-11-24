@@ -3,8 +3,9 @@ edk2-sandbox
 
 ReBIOS's sandbox firmware: ReBiosSandboxPkg, an EDK II platform on which
 ReBIOS runs a graphics card's own UEFI GOP driver again, in a VM of its own,
-to bring the card back to the mode the firmware left it in once a native
-driver of the OS has had the card.
+to have it set the card's modes that ReBIOS shows its guest's display in,
+also once a native driver of the OS has had the card, and as the machine
+wakes from sleep.
 
 The platform is paravirtual: it reaches ReBIOS for time, PCI configuration
 space, and its log through hypercalls, and has no emulated devices.
