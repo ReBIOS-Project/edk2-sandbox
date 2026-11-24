@@ -1,0 +1,45 @@
+## @file
+#  The sandbox's PCD services: the platform firmware's dynamic PCDs as ReBIOS
+#  found them, for the GOPs built into that firmware, which reach them by its
+#  token numbers.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxPcdDxe
+  FILE_GUID      = 9762F2E1-3CA0-4F60-9C2B-003AF4174D60
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = SandboxPcdDxeEntry
+
+[Sources]
+  SandboxPcdDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  HobLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid   ## CONSUMES
+
+[Protocols]
+  gPcdProtocolGuid               ## PRODUCES
+  gEfiPcdProtocolGuid            ## PRODUCES
+  gGetPcdInfoProtocolGuid        ## PRODUCES
+  gEfiGetPcdInfoProtocolGuid     ## PRODUCES
+
+[Depex]
+  TRUE

@@ -26,7 +26,7 @@
 #define REBIOS_SANDBOX_H_
 
 #define REBIOS_SANDBOX_HANDOFF_SIGNATURE  SIGNATURE_64 ('R', 'B', 'S', 'A', 'N', 'D', 'B', 'X')
-#define REBIOS_SANDBOX_HANDOFF_VERSION    1
+#define REBIOS_SANDBOX_HANDOFF_VERSION    2
 
 //
 // What the handoff says the firmware is to do.
@@ -45,6 +45,11 @@
 #define REBIOS_SANDBOX_GOP_SOURCE_IMAGE       2
 
 #define REBIOS_SANDBOX_MAX_BRIDGES  8
+
+//
+// A PCD's type where the platform firmware did not give it.
+//
+#define REBIOS_SANDBOX_PCD_TYPE_UNKNOWN  0xFFFFFFFF
 
 #pragma pack(1)
 
@@ -66,6 +71,20 @@ typedef struct {
   UINT64    Base;
   UINT64    Size;
 } REBIOS_SANDBOX_RANGE;
+
+///
+/// One of the platform firmware's dynamic PCDs: the GUID of its token space,
+/// all zeroes for the local one, its token number, its type as EFI_PCD_TYPE
+/// or REBIOS_SANDBOX_PCD_TYPE_UNKNOWN, and its size; its value follows, and
+/// the next entry follows that at a multiple of 8 bytes.
+///
+typedef struct {
+  EFI_GUID    Guid;
+  UINT32      TokenNumber;
+  UINT32      Type;
+  UINT32      Size;
+  UINT32      Reserved;
+} REBIOS_SANDBOX_PCD;
 
 ///
 /// The mode the GOP is to set, by its resolution and pixel format, in the
@@ -143,6 +162,13 @@ typedef struct {
   ///
   UINT64                        AcpiRsdp;
   REBIOS_SANDBOX_MODE           Mode;
+  ///
+  /// The platform firmware's dynamic PCDs as they were when ReBIOS started,
+  /// REBIOS_SANDBOX_PCD entries one after another, in the sandbox's memory,
+  /// and the SKU they are of.
+  ///
+  REBIOS_SANDBOX_RANGE          Pcds;
+  UINT64                        PcdSku;
 } REBIOS_SANDBOX_HANDOFF;
 
 #pragma pack()

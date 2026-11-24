@@ -365,6 +365,7 @@ _ModuleEntryPoint (
   ReserveRange (&Handoff->Tables, EfiBootServicesData);
   ReserveRange (&Handoff->GopImage, EfiBootServicesData);
   ReserveRange (&Handoff->Vbt, EfiBootServicesData);
+  ReserveRange (&Handoff->Pcds, EfiBootServicesData);
   BuildMemoryAllocationHob (
     (UINTN)Handoff & ~(UINTN)EFI_PAGE_MASK,
     ALIGN_VALUE (Handoff->Size + ((UINTN)Handoff & EFI_PAGE_MASK), EFI_PAGE_SIZE),
