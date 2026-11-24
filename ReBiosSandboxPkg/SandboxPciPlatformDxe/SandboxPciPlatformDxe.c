@@ -93,7 +93,8 @@ SandboxGetPlatformPolicy (
 }
 
 /**
-  Returns the option ROM of a PCI function: the GPU's, from the handoff.
+  Returns the option ROM of a PCI function: the GPU's, from the handoff, the
+  one its GOP comes from, or else the one the platform firmware gave it.
 
   @param[in]   This       The protocol.
   @param[in]   PciHandle  The function's handle.
@@ -101,8 +102,8 @@ SandboxGetPlatformPolicy (
   @param[out]  RomSize    Its size.
 
   @retval EFI_SUCCESS            The GPU's ROM was returned.
-  @retval EFI_NOT_FOUND          The function is not the GPU, or the GPU's GOP
-                                 is not in its option ROM.
+  @retval EFI_NOT_FOUND          The function is not the GPU, or the handoff
+                                 gives no ROM of it.
   @retval EFI_INVALID_PARAMETER  RomImage or RomSize is NULL.
 **/
 STATIC
@@ -115,12 +116,13 @@ SandboxGetPciRom (
   OUT       UINTN                      *RomSize
   )
 {
-  EFI_STATUS           Status;
-  EFI_PCI_IO_PROTOCOL  *PciIo;
-  UINTN                Segment;
-  UINTN                Bus;
-  UINTN                Device;
-  UINTN                Function;
+  EFI_STATUS                  Status;
+  CONST REBIOS_SANDBOX_RANGE  *Rom;
+  EFI_PCI_IO_PROTOCOL         *PciIo;
+  UINTN                       Segment;
+  UINTN                       Bus;
+  UINTN                       Device;
+  UINTN                       Function;
 
   if ((RomImage == NULL) || (RomSize == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -128,7 +130,11 @@ SandboxGetPciRom (
 
   *RomImage = NULL;
   *RomSize  = 0;
-  if ((mHandoff->GopSource != REBIOS_SANDBOX_GOP_SOURCE_OPTION_ROM) || (mHandoff->GopImage.Size == 0)) {
+  if ((mHandoff->GopSource == REBIOS_SANDBOX_GOP_SOURCE_OPTION_ROM) && (mHandoff->GopImage.Size != 0)) {
+    Rom = &mHandoff->GopImage;
+  } else if (mHandoff->Rom.Size != 0) {
+    Rom = &mHandoff->Rom;
+  } else {
     return EFI_NOT_FOUND;
   }
 
@@ -144,8 +150,8 @@ SandboxGetPciRom (
     return EFI_NOT_FOUND;
   }
 
-  *RomImage = (VOID *)(UINTN)mHandoff->GopImage.Base;
-  *RomSize  = (UINTN)mHandoff->GopImage.Size;
+  *RomImage = (VOID *)(UINTN)Rom->Base;
+  *RomSize  = (UINTN)Rom->Size;
   return EFI_SUCCESS;
 }
 

@@ -176,6 +176,13 @@ typedef struct {
   ///
   UINT32                        GopPolicyRevision;
   UINT32                        LidStatus;
+  ///
+  /// Where the GOP does not come from the GPU's option ROM, the ROM image the
+  /// platform firmware gave the GPU's PCI I/O protocol, in the sandbox's
+  /// memory, if any, which the GPU's PCI I/O protocol gives in the sandbox
+  /// too.
+  ///
+  REBIOS_SANDBOX_RANGE          Rom;
 } REBIOS_SANDBOX_HANDOFF;
 
 #pragma pack()
