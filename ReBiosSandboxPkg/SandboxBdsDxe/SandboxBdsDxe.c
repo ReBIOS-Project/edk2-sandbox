@@ -12,6 +12,7 @@
 #include <Protocol/Bds.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/GraphicsOutput.h>
+#include <Protocol/LoadedImage.h>
 #include <Protocol/PciEnumerationComplete.h>
 #include <Protocol/PciIo.h>
 #include <Protocol/PciRootBridgeIo.h>
@@ -29,6 +30,27 @@
 STATIC CONST REBIOS_SANDBOX_HANDOFF  *mHandoff;
 STATIC EFI_HANDLE                    mBdsHandle;
 STATIC REBIOS_SANDBOX_MODE           mResult;
+
+//
+// The images DXE loaded before the GPU's driver, the sandbox's own, whose
+// lookups that fail tell nothing of what the driver needs; the protocols the
+// driver looked for in vain, each logged once; and the boot services that
+// lookups go through.
+//
+#define MAX_OWN_IMAGES     64
+#define MAX_MISSES_LOGGED  32
+
+typedef struct {
+  EFI_PHYSICAL_ADDRESS    Base;
+  UINT64                  Size;
+} IMAGE_RANGE;
+
+STATIC IMAGE_RANGE               mOwnImages[MAX_OWN_IMAGES];
+STATIC UINTN                     mOwnImageCount;
+STATIC EFI_GUID                  mMissed[MAX_MISSES_LOGGED];
+STATIC UINTN                     mMissedCount;
+STATIC EFI_LOCATE_PROTOCOL       mLocateProtocol;
+STATIC EFI_LOCATE_HANDLE_BUFFER  mLocateHandleBuffer;
 
 /**
   Tells ReBIOS the task's result, which ends the sandbox's run.
@@ -341,6 +363,183 @@ SetWantedMode (
 }
 
 /**
+  Whether code at an address is in one of the sandbox's own images.
+
+  @param[in]  Address  The address.
+
+  @retval TRUE   It is.
+  @retval FALSE  It is in the GPU's driver, or another image loaded after
+                 the sandbox's.
+**/
+STATIC
+BOOLEAN
+IsOwnCode (
+  IN UINTN  Address
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < mOwnImageCount; Index++) {
+    if ((Address >= mOwnImages[Index].Base) && (Address - mOwnImages[Index].Base < mOwnImages[Index].Size)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+  Logs a protocol that the GPU's driver looked for and the sandbox lacks,
+  once, which may be one the platform firmware gives it.
+
+  @param[in]  Protocol  The protocol.
+  @param[in]  Caller    Where the driver looked for it.
+**/
+STATIC
+VOID
+LogMissedProtocol (
+  IN CONST EFI_GUID  *Protocol,
+  IN UINTN           Caller
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < mMissedCount; Index++) {
+    if (CompareGuid (&mMissed[Index], Protocol)) {
+      return;
+    }
+  }
+
+  if (mMissedCount < MAX_MISSES_LOGGED) {
+    CopyGuid (&mMissed[mMissedCount], Protocol);
+    mMissedCount++;
+  }
+
+  DEBUG ((
+    DEBUG_ERROR,
+    "ReBIOS sandbox: code at 0x%lx looked for protocol %g, which the sandbox lacks\n",
+    (UINT64)Caller,
+    Protocol
+    ));
+}
+
+/**
+  LocateProtocol(), which logs a protocol that the GPU's driver looks for in
+  vain.
+
+  @param[in]   Protocol      The protocol.
+  @param[in]   Registration  A registration key, or NULL.
+  @param[out]  Interface     The protocol's interface.
+
+  @return  What LocateProtocol() returns.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+LoggedLocateProtocol (
+  IN  EFI_GUID  *Protocol,
+  IN  VOID      *Registration  OPTIONAL,
+  OUT VOID      **Interface
+  )
+{
+  UINTN       Caller;
+  EFI_STATUS  Status;
+
+  Caller = (UINTN)RETURN_ADDRESS (0);
+  Status = mLocateProtocol (Protocol, Registration, Interface);
+  //
+  // With a registration key, a lookup asks for a protocol installed since,
+  // which there is often none of.
+  //
+  if (EFI_ERROR (Status) && (Protocol != NULL) && (Registration == NULL) && !IsOwnCode (Caller)) {
+    LogMissedProtocol (Protocol, Caller);
+  }
+
+  return Status;
+}
+
+/**
+  LocateHandleBuffer(), which logs a protocol that the GPU's driver looks for
+  the handles of in vain.
+
+  @param[in]   SearchType  What to look for.
+  @param[in]   Protocol    The protocol, for ByProtocol.
+  @param[in]   SearchKey   The search key.
+  @param[out]  NoHandles   How many handles there are.
+  @param[out]  Buffer      The handles.
+
+  @return  What LocateHandleBuffer() returns.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+LoggedLocateHandleBuffer (
+  IN     EFI_LOCATE_SEARCH_TYPE  SearchType,
+  IN     EFI_GUID                *Protocol       OPTIONAL,
+  IN     VOID                    *SearchKey      OPTIONAL,
+  OUT    UINTN                   *NoHandles,
+  OUT    EFI_HANDLE              **Buffer
+  )
+{
+  UINTN       Caller;
+  EFI_STATUS  Status;
+
+  Caller = (UINTN)RETURN_ADDRESS (0);
+  Status = mLocateHandleBuffer (SearchType, Protocol, SearchKey, NoHandles, Buffer);
+  if (EFI_ERROR (Status) && (SearchType == ByProtocol) && (Protocol != NULL) && !IsOwnCode (Caller)) {
+    LogMissedProtocol (Protocol, Caller);
+  }
+
+  return Status;
+}
+
+/**
+  From now on, logs the protocols that the GPU's driver looks for and the
+  sandbox lacks, as the images loaded so far are the sandbox's own. The
+  lookups of an EBC driver go through the sandbox's interpreter, and are not
+  logged.
+**/
+STATIC
+VOID
+WatchLookups (
+  VOID
+  )
+{
+  EFI_STATUS                 Status;
+  UINTN                      HandleCount;
+  EFI_HANDLE                 *Handles;
+  UINTN                      Index;
+  EFI_LOADED_IMAGE_PROTOCOL  *Image;
+
+  Status = gBS->LocateHandleBuffer (ByProtocol, &gEfiLoadedImageProtocolGuid, NULL, &HandleCount, &Handles);
+  if (EFI_ERROR (Status)) {
+    return;
+  }
+
+  for (Index = 0; Index < HandleCount && mOwnImageCount < MAX_OWN_IMAGES; Index++) {
+    Status = gBS->HandleProtocol (Handles[Index], &gEfiLoadedImageProtocolGuid, (VOID **)&Image);
+    if (!EFI_ERROR (Status)) {
+      mOwnImages[mOwnImageCount].Base = (EFI_PHYSICAL_ADDRESS)(UINTN)Image->ImageBase;
+      mOwnImages[mOwnImageCount].Size = Image->ImageSize;
+      mOwnImageCount++;
+    }
+  }
+
+  FreePool (Handles);
+  if (Index < HandleCount) {
+    DEBUG ((DEBUG_ERROR, "ReBIOS sandbox: more images than are watched for lookups\n"));
+    return;
+  }
+
+  mLocateProtocol         = gBS->LocateProtocol;
+  mLocateHandleBuffer     = gBS->LocateHandleBuffer;
+  gBS->LocateProtocol     = LoggedLocateProtocol;
+  gBS->LocateHandleBuffer = LoggedLocateHandleBuffer;
+  gBS->Hdr.CRC32          = 0;
+  gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
+}
+
+/**
   The BDS's entry: the task of the handoff, then the end of the sandbox's run.
 
   @param[in]  This  The protocol.
@@ -361,6 +560,7 @@ SandboxBdsEntry (
   }
 
   EfiEventGroupSignal (&gEfiEndOfDxeEventGroupGuid);
+  WatchLookups ();
 
   if (mHandoff->GopSource == REBIOS_SANDBOX_GOP_SOURCE_IMAGE) {
     Status = StartGopImage ();

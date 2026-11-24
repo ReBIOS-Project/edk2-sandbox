@@ -11,7 +11,8 @@ The platform is paravirtual: it reaches ReBIOS for time, PCI configuration
 space, and its log through hypercalls, and has no emulated devices. A GOP
 built into the platform firmware, as an iGPU's, reads that firmware's dynamic
 PCDs, which ReBIOS gives the sandbox as it found them, in place of a PCD
-database of the sandbox's own.
+database of the sandbox's own. The log names each protocol that a GOP looks
+for and the sandbox lacks.
 
 ReBiosSandboxPkg is built against the upstream EDK II release named in
 EDK2_TAG, with this repository on EDK II's PACKAGES_PATH. GitHub workflows
