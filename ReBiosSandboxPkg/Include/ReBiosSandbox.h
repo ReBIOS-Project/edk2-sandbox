@@ -26,7 +26,7 @@
 #define REBIOS_SANDBOX_H_
 
 #define REBIOS_SANDBOX_HANDOFF_SIGNATURE  SIGNATURE_64 ('R', 'B', 'S', 'A', 'N', 'D', 'B', 'X')
-#define REBIOS_SANDBOX_HANDOFF_VERSION    2
+#define REBIOS_SANDBOX_HANDOFF_VERSION    3
 
 //
 // What the handoff says the firmware is to do.
@@ -169,6 +169,13 @@ typedef struct {
   ///
   REBIOS_SANDBOX_RANGE          Pcds;
   UINT64                        PcdSku;
+  ///
+  /// The revision of the platform GOP policy protocol to give the GOP, with
+  /// the Vbt, 0 where the platform firmware had no such protocol; and the
+  /// lid's state, a LID_STATUS, as ReBIOS found it as the run began.
+  ///
+  UINT32                        GopPolicyRevision;
+  UINT32                        LidStatus;
 } REBIOS_SANDBOX_HANDOFF;
 
 #pragma pack()

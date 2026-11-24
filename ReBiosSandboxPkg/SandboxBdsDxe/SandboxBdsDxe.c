@@ -16,6 +16,7 @@
 #include <Protocol/PciEnumerationComplete.h>
 #include <Protocol/PciIo.h>
 #include <Protocol/PciRootBridgeIo.h>
+#include <Protocol/PlatformGopPolicy.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -363,6 +364,96 @@ SetWantedMode (
 }
 
 /**
+  The lid's state, as ReBIOS found it as the run began.
+
+  @param[out]  CurrentLidStatus  The state.
+
+  @retval EFI_SUCCESS            CurrentLidStatus is the state.
+  @retval EFI_INVALID_PARAMETER  CurrentLidStatus is NULL.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+GetPlatformLidStatus (
+  OUT LID_STATUS  *CurrentLidStatus
+  )
+{
+  if (CurrentLidStatus == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *CurrentLidStatus = mHandoff->LidStatus == LidClosed ? LidClosed : LidOpen;
+  return EFI_SUCCESS;
+}
+
+/**
+  The platform firmware's Video BIOS Table, which ReBIOS kept.
+
+  @param[out]  VbtAddress  Its address.
+  @param[out]  VbtSize     Its size.
+
+  @retval EFI_SUCCESS            They are the table's.
+  @retval EFI_INVALID_PARAMETER  One is NULL.
+  @retval EFI_NOT_FOUND          The platform firmware gave none.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+GetVbtData (
+  OUT EFI_PHYSICAL_ADDRESS  *VbtAddress,
+  OUT UINT32                *VbtSize
+  )
+{
+  if ((VbtAddress == NULL) || (VbtSize == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mHandoff->Vbt.Size == 0) {
+    return EFI_NOT_FOUND;
+  }
+
+  *VbtAddress = mHandoff->Vbt.Base;
+  *VbtSize    = (UINT32)mHandoff->Vbt.Size;
+  return EFI_SUCCESS;
+}
+
+STATIC PLATFORM_GOP_POLICY_PROTOCOL  mGopPolicy = {
+  PLATFORM_GOP_POLICY_PROTOCOL_REVISION_01,
+  GetPlatformLidStatus,
+  GetVbtData
+};
+
+/**
+  Gives the GOP the platform GOP policy protocol, where the platform firmware
+  gave its own GOP one: its revision 1, which every revision has the members
+  of.
+**/
+STATIC
+VOID
+InstallGopPolicy (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
+
+  if (mHandoff->GopPolicyRevision == 0) {
+    return;
+  }
+
+  Handle = NULL;
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &Handle,
+                  &gPlatformGopPolicyProtocolGuid,
+                  &mGopPolicy,
+                  NULL
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "ReBIOS sandbox: the platform GOP policy protocol is not installed: %r\n", Status));
+  }
+}
+
+/**
   Whether code at an address is in one of the sandbox's own images.
 
   @param[in]  Address  The address.
@@ -560,6 +651,7 @@ SandboxBdsEntry (
   }
 
   EfiEventGroupSignal (&gEfiEndOfDxeEventGroupGuid);
+  InstallGopPolicy ();
   WatchLookups ();
 
   if (mHandoff->GopSource == REBIOS_SANDBOX_GOP_SOURCE_IMAGE) {
