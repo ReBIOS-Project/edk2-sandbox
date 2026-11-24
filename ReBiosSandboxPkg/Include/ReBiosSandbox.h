@@ -114,6 +114,18 @@ typedef struct {
   UINT64    FrameBufferBase;
 } REBIOS_SANDBOX_MODE;
 
+///
+/// The next task, with what it needs that may have changed since the handoff,
+/// which ReBIOS gives the firmware that stays after one: its
+/// REBIOS_SANDBOX_TASK_*, the lid's state, a LID_STATUS, and the mode the GOP
+/// is to set.
+///
+typedef struct {
+  UINT32                 Task;
+  UINT32                 LidStatus;
+  REBIOS_SANDBOX_MODE    Mode;
+} REBIOS_SANDBOX_REQUEST;
+
 typedef struct {
   UINT64                                Signature;
   UINT32                                Version;
@@ -240,7 +252,11 @@ typedef struct {
 
 ///
 /// RBX: the EFI_STATUS of the task, RCX: the physical address of a
-/// REBIOS_SANDBOX_MODE with the mode set, or 0. Ends the sandbox's run.
+/// REBIOS_SANDBOX_MODE with the mode set, or 0, RDX: the physical address of a
+/// REBIOS_SANDBOX_REQUEST, or 0. Ends the sandbox's run. Where RDX is not 0,
+/// the firmware stays, the GPU as its GOP left it, and ReBIOS may run it
+/// again from after the hypercall, with the next task in the request, rather
+/// than start it anew.
 ///
 #define REBIOS_SANDBOX_CALL_DONE  6
 

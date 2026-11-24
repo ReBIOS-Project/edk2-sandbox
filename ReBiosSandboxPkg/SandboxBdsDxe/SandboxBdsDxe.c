@@ -31,6 +31,8 @@
 STATIC CONST REBIOS_SANDBOX_HANDOFF  *mHandoff;
 STATIC EFI_HANDLE                    mBdsHandle;
 STATIC REBIOS_SANDBOX_MODE           mResult;
+STATIC REBIOS_SANDBOX_REQUEST        mRequest;
+STATIC UINT32                        mLidStatus;
 
 //
 // The images DXE loaded before the GPU's driver, the sandbox's own, whose
@@ -69,6 +71,25 @@ Done (
   DEBUG ((DEBUG_INFO, "ReBIOS sandbox: done: %r\n", Status));
   ReBiosHypercall (REBIOS_SANDBOX_CALL_DONE, (UINT64)Status, (UINTN)Mode, 0, 0);
   CpuDeadLoop ();
+}
+
+/**
+  Tells ReBIOS the task's result, which ends the sandbox's run, and stays, the
+  GPU as the GOP left it, until ReBIOS runs the firmware again with the next
+  task, which it puts in mRequest.
+
+  @param[in]  Status  The result.
+  @param[in]  Mode    The mode set, or NULL.
+**/
+STATIC
+VOID
+Stay (
+  IN EFI_STATUS                 Status,
+  IN CONST REBIOS_SANDBOX_MODE  *Mode OPTIONAL
+  )
+{
+  DEBUG ((DEBUG_INFO, "ReBIOS sandbox: done, staying: %r\n", Status));
+  ReBiosHypercall (REBIOS_SANDBOX_CALL_DONE, (UINT64)Status, (UINTN)Mode, (UINTN)&mRequest, 0);
 }
 
 /**
@@ -258,9 +279,10 @@ FindGop (
 }
 
 /**
-  Whether a mode of the GOP's is the one the handoff names.
+  Whether a mode of the GOP's is the one wanted.
 
   @param[in]  Info  The mode.
+  @param[in]  Want  The mode wanted.
 
   @retval TRUE   It is.
   @retval FALSE  It is not.
@@ -268,12 +290,10 @@ FindGop (
 STATIC
 BOOLEAN
 IsWantedMode (
-  IN CONST EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info
+  IN CONST EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info,
+  IN CONST REBIOS_SANDBOX_MODE                   *Want
   )
 {
-  CONST REBIOS_SANDBOX_MODE  *Want;
-
-  Want = &mHandoff->Mode;
   if ((Info->HorizontalResolution != Want->HorizontalResolution) ||
       (Info->VerticalResolution != Want->VerticalResolution) ||
       ((UINT32)Info->PixelFormat != Want->PixelFormat))
@@ -292,9 +312,10 @@ IsWantedMode (
 }
 
 /**
-  Sets the GOP's mode that the handoff names, and fills the result with it.
+  Sets the GOP's mode that is wanted, and fills the result with it.
 
-  @param[in]  Gop  The GOP.
+  @param[in]  Gop   The GOP.
+  @param[in]  Want  The mode wanted.
 
   @retval EFI_SUCCESS    The mode is set.
   @retval EFI_NOT_FOUND  The GOP has no such mode.
@@ -303,7 +324,8 @@ IsWantedMode (
 STATIC
 EFI_STATUS
 SetWantedMode (
-  IN EFI_GRAPHICS_OUTPUT_PROTOCOL  *Gop
+  IN EFI_GRAPHICS_OUTPUT_PROTOCOL  *Gop,
+  IN CONST REBIOS_SANDBOX_MODE     *Want
   )
 {
   EFI_STATUS                                  Status;
@@ -317,7 +339,7 @@ SetWantedMode (
       continue;
     }
 
-    if (IsWantedMode (Info)) {
+    if (IsWantedMode (Info, Want)) {
       FreePool (Info);
       break;
     }
@@ -329,9 +351,9 @@ SetWantedMode (
     DEBUG ((
       DEBUG_ERROR,
       "ReBIOS sandbox: the GOP has no %ux%u mode in format %u\n",
-      mHandoff->Mode.HorizontalResolution,
-      mHandoff->Mode.VerticalResolution,
-      mHandoff->Mode.PixelFormat
+      Want->HorizontalResolution,
+      Want->VerticalResolution,
+      Want->PixelFormat
       ));
     return EFI_NOT_FOUND;
   }
@@ -382,7 +404,7 @@ GetPlatformLidStatus (
     return EFI_INVALID_PARAMETER;
   }
 
-  *CurrentLidStatus = mHandoff->LidStatus == LidClosed ? LidClosed : LidOpen;
+  *CurrentLidStatus = mLidStatus == LidClosed ? LidClosed : LidOpen;
   return EFI_SUCCESS;
 }
 
@@ -704,8 +726,22 @@ SandboxBdsEntry (
     Done (Status, NULL);
   }
 
-  Status = SetWantedMode (Gop);
-  Done (Status, EFI_ERROR (Status) ? NULL : &mResult);
+  //
+  // The GOP, which has set the GPU up, stays for the modes that follow, which
+  // it sets alone.
+  //
+  mLidStatus = mHandoff->LidStatus;
+  Status     = SetWantedMode (Gop, &mHandoff->Mode);
+  for ( ; ;) {
+    Stay (Status, EFI_ERROR (Status) ? NULL : &mResult);
+    if (mRequest.Task != REBIOS_SANDBOX_TASK_GOP_SET_MODE) {
+      Status = EFI_UNSUPPORTED;
+      continue;
+    }
+
+    mLidStatus = mRequest.LidStatus;
+    Status     = SetWantedMode (Gop, &mRequest.Mode);
+  }
 }
 
 STATIC EFI_BDS_ARCH_PROTOCOL  mBds = {
