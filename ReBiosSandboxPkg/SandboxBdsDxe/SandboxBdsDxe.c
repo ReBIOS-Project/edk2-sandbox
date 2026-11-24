@@ -454,6 +454,29 @@ InstallGopPolicy (
 }
 
 /**
+  Gives the GOP the platform firmware's ACPI and SMBIOS tables, the entries of
+  its configuration table that ReBIOS kept, as they were.
+**/
+STATIC
+VOID
+InstallConfigurationTables (
+  VOID
+  )
+{
+  CONST REBIOS_SANDBOX_CONFIGURATION_TABLE  *Entry;
+  EFI_STATUS                                Status;
+  UINT32                                    Index;
+
+  for (Index = 0; Index < mHandoff->ConfigurationTableCount && Index < REBIOS_SANDBOX_MAX_CONFIGURATION_TABLES; Index++) {
+    Entry  = &mHandoff->ConfigurationTables[Index];
+    Status = gBS->InstallConfigurationTable ((EFI_GUID *)&Entry->Guid, (VOID *)(UINTN)Entry->Table);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "ReBIOS sandbox: configuration table %g is not installed: %r\n", &Entry->Guid, Status));
+    }
+  }
+}
+
+/**
   Whether code at an address is in one of the sandbox's own images.
 
   @param[in]  Address  The address.
@@ -651,6 +674,7 @@ SandboxBdsEntry (
   }
 
   EfiEventGroupSignal (&gEfiEndOfDxeEventGroupGuid);
+  InstallConfigurationTables ();
   InstallGopPolicy ();
   WatchLookups ();
 

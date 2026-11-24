@@ -14,11 +14,12 @@ the memory ReBIOS gives it is, relocating its SEC module there. A GOP
 built into the platform firmware, as an iGPU's, reads that firmware's dynamic
 PCDs, which ReBIOS gives the sandbox as it found them, in place of a PCD
 database of the sandbox's own. As the platform firmware did, the sandbox
-gives the GOP the GPU's ROM image the platform gave the GPU's PCI I/O
-protocol. Where the platform firmware gives its GOP the platform GOP policy
-protocol, as an Intel iGPU's GOP looks for, the sandbox gives it one too,
-with the platform's Video BIOS Table, and the lid's state as ReBIOS finds it.
-The log names each protocol that a GOP looks for and the sandbox lacks.
+gives the GOP the platform's ACPI and SMBIOS tables in its configuration
+table, and the GPU's ROM image the platform gave the GPU's PCI I/O protocol.
+Where the platform firmware gives its GOP the platform GOP policy protocol,
+as an Intel iGPU's GOP looks for, the sandbox gives it one too, with the
+platform's Video BIOS Table, and the lid's state as ReBIOS finds it. The log
+names each protocol that a GOP looks for and the sandbox lacks.
 
 ReBiosSandboxPkg is built against the upstream EDK II release named in
 EDK2_TAG, with this repository on EDK II's PACKAGES_PATH. GitHub workflows

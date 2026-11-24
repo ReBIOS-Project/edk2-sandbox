@@ -44,7 +44,8 @@
 #define REBIOS_SANDBOX_GOP_SOURCE_OPTION_ROM  1
 #define REBIOS_SANDBOX_GOP_SOURCE_IMAGE       2
 
-#define REBIOS_SANDBOX_MAX_BRIDGES  8
+#define REBIOS_SANDBOX_MAX_BRIDGES               8
+#define REBIOS_SANDBOX_MAX_CONFIGURATION_TABLES  4
 
 //
 // A PCD's type where the platform firmware did not give it.
@@ -87,6 +88,14 @@ typedef struct {
 } REBIOS_SANDBOX_PCD;
 
 ///
+/// An entry of the platform firmware's configuration table.
+///
+typedef struct {
+  EFI_GUID    Guid;
+  UINT64      Table;
+} REBIOS_SANDBOX_CONFIGURATION_TABLE;
+
+///
 /// The mode the GOP is to set, by its resolution and pixel format, in the
 /// handoff; in the result, the mode it set.
 ///
@@ -106,83 +115,87 @@ typedef struct {
 } REBIOS_SANDBOX_MODE;
 
 typedef struct {
-  UINT64                        Signature;
-  UINT32                        Version;
-  UINT32                        Size;
-  UINT32                        Task;
-  UINT32                        Reserved;
+  UINT64                                Signature;
+  UINT32                                Version;
+  UINT32                                Size;
+  UINT32                                Task;
+  UINT32                                Reserved;
   ///
   /// The sandbox's memory, which the handoff, the stack, the firmware's
   /// volume, and the images the handoff gives are in; the part of it that
   /// holds none of them; the stack; and the firmware's volume.
   ///
-  REBIOS_SANDBOX_RANGE          Memory;
-  REBIOS_SANDBOX_RANGE          FreeMemory;
-  REBIOS_SANDBOX_RANGE          Stack;
-  REBIOS_SANDBOX_RANGE          FirmwareVolume;
+  REBIOS_SANDBOX_RANGE                  Memory;
+  REBIOS_SANDBOX_RANGE                  FreeMemory;
+  REBIOS_SANDBOX_RANGE                  Stack;
+  REBIOS_SANDBOX_RANGE                  FirmwareVolume;
   ///
   /// The page tables and the GDT ReBIOS starts the firmware with, which stay
   /// in use.
   ///
-  REBIOS_SANDBOX_RANGE          Tables;
+  REBIOS_SANDBOX_RANGE                  Tables;
   ///
   /// The processor's time-stamp counter frequency, in hertz.
   ///
-  UINT64                        TscFrequency;
+  UINT64                                TscFrequency;
   ///
   /// The GPU, the bridges above it, from the root bus down, and the root
   /// bridge's buses and apertures, which hold the GPU's BARs and the
   /// bridges' windows.
   ///
-  REBIOS_SANDBOX_PCI_ADDRESS    Gpu;
-  UINT32                        BridgeCount;
-  UINT32                        Reserved2;
-  REBIOS_SANDBOX_PCI_ADDRESS    Bridges[REBIOS_SANDBOX_MAX_BRIDGES];
-  UINT8                         RootBusBase;
-  UINT8                         RootBusLimit;
-  UINT8                         Reserved3[6];
-  REBIOS_SANDBOX_RANGE          Mem32Aperture;
-  REBIOS_SANDBOX_RANGE          Mem64Aperture;
-  REBIOS_SANDBOX_RANGE          IoAperture;
+  REBIOS_SANDBOX_PCI_ADDRESS            Gpu;
+  UINT32                                BridgeCount;
+  UINT32                                Reserved2;
+  REBIOS_SANDBOX_PCI_ADDRESS            Bridges[REBIOS_SANDBOX_MAX_BRIDGES];
+  UINT8                                 RootBusBase;
+  UINT8                                 RootBusLimit;
+  UINT8                                 Reserved3[6];
+  REBIOS_SANDBOX_RANGE                  Mem32Aperture;
+  REBIOS_SANDBOX_RANGE                  Mem64Aperture;
+  REBIOS_SANDBOX_RANGE                  IoAperture;
   ///
   /// Where the GPU's GOP comes from, and the image of its option ROM or of
   /// the driver, in the sandbox's memory.
   ///
-  UINT32                        GopSource;
-  UINT32                        Reserved4;
-  REBIOS_SANDBOX_RANGE          GopImage;
+  UINT32                                GopSource;
+  UINT32                                Reserved4;
+  REBIOS_SANDBOX_RANGE                  GopImage;
   ///
   /// An Intel iGPU's Video BIOS Table, in the sandbox's memory, where there is
   /// one.
   ///
-  REBIOS_SANDBOX_RANGE          Vbt;
-  ///
-  /// The platform's ACPI RSDP, whose tables the sandbox reaches read-only, 0
-  /// where there is none.
-  ///
-  UINT64                        AcpiRsdp;
-  REBIOS_SANDBOX_MODE           Mode;
+  REBIOS_SANDBOX_RANGE                  Vbt;
+  UINT64                                Reserved5;
+  REBIOS_SANDBOX_MODE                   Mode;
   ///
   /// The platform firmware's dynamic PCDs as they were when ReBIOS started,
   /// REBIOS_SANDBOX_PCD entries one after another, in the sandbox's memory,
   /// and the SKU they are of.
   ///
-  REBIOS_SANDBOX_RANGE          Pcds;
-  UINT64                        PcdSku;
+  REBIOS_SANDBOX_RANGE                  Pcds;
+  UINT64                                PcdSku;
   ///
   /// The revision of the platform GOP policy protocol to give the GOP, with
   /// the Vbt, 0 where the platform firmware had no such protocol; and the
   /// lid's state, a LID_STATUS, as ReBIOS found it as the run began.
   ///
-  UINT32                        GopPolicyRevision;
-  UINT32                        LidStatus;
+  UINT32                                GopPolicyRevision;
+  UINT32                                LidStatus;
   ///
   /// Where the GOP does not come from the GPU's option ROM, the ROM image the
   /// platform firmware gave the GPU's PCI I/O protocol, in the sandbox's
   /// memory, if any, which the GPU's PCI I/O protocol gives in the sandbox
   /// too.
   ///
-  REBIOS_SANDBOX_RANGE          Rom;
+  REBIOS_SANDBOX_RANGE                  Rom;
+  ///
+  /// The platform firmware's configuration table entries for its ACPI and
+  /// SMBIOS tables, which the sandbox's configuration table gives as they
+  /// were.
+  ///
+  UINT32                                ConfigurationTableCount;
+  UINT32                                Reserved6;
+  REBIOS_SANDBOX_CONFIGURATION_TABLE    ConfigurationTables[REBIOS_SANDBOX_MAX_CONFIGURATION_TABLES];
 } REBIOS_SANDBOX_HANDOFF;
 
 #pragma pack()
