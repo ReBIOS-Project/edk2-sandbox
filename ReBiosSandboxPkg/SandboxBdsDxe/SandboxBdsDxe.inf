@@ -1,0 +1,48 @@
+## @file
+#  The sandbox's BDS, which has the GPU's GOP set the mode ReBIOS asks for.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxBdsDxe
+  FILE_GUID      = DC38146B-0484-409E-8399-4F04A78EB31C
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = SandboxBdsDxeEntry
+
+[Sources]
+  SandboxBdsDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  DevicePathLib
+  HobLib
+  HypercallLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid             ## CONSUMES
+  gEfiEndOfDxeEventGroupGuid               ## PRODUCES
+
+[Protocols]
+  gEfiBdsArchProtocolGuid                  ## PRODUCES
+  gEfiGraphicsOutputProtocolGuid           ## CONSUMES
+  gEfiPciEnumerationCompleteProtocolGuid   ## PRODUCES
+  gEfiPciIoProtocolGuid                    ## CONSUMES
+  gEfiPciRootBridgeIoProtocolGuid          ## CONSUMES
+
+[Depex]
+  TRUE

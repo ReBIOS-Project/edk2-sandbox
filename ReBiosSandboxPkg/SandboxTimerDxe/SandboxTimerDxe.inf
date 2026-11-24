@@ -1,0 +1,35 @@
+## @file
+#  The sandbox's timer architectural protocol, its interrupt raised by ReBIOS.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxTimerDxe
+  FILE_GUID      = 7F394952-A237-447A-9424-4E5E83527C14
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = SandboxTimerDxeEntry
+
+[Sources]
+  SandboxTimerDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  HypercallLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiCpuArchProtocolGuid     ## CONSUMES
+  gEfiTimerArchProtocolGuid   ## PRODUCES
+
+[Depex]
+  gEfiCpuArchProtocolGuid

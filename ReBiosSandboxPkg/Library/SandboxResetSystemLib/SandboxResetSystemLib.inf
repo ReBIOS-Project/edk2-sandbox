@@ -1,0 +1,26 @@
+## @file
+#  Resets in the sandbox, which end its run as a failure.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxResetSystemLib
+  FILE_GUID      = 0305737A-B3F3-419B-8952-97CF8EA27D62
+  MODULE_TYPE    = BASE
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = ResetSystemLib
+
+[Sources]
+  SandboxResetSystemLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  HypercallLib

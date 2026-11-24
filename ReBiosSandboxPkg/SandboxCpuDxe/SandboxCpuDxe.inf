@@ -1,0 +1,43 @@
+## @file
+#  The sandbox's CPU architectural protocol.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxCpuDxe
+  FILE_GUID      = 5056CFB6-4AC5-415F-8618-93CFCAA864E6
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = SandboxCpuDxeEntry
+
+[Sources]
+  SandboxCpuDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  CpuExceptionHandlerLib
+  DebugLib
+  HobLib
+  HypercallLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid   ## CONSUMES
+
+[Protocols]
+  gEfiCpuArchProtocolGuid        ## PRODUCES
+
+[Depex]
+  TRUE

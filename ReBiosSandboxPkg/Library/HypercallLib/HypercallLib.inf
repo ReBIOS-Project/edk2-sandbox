@@ -1,0 +1,27 @@
+## @file
+#  Hypercalls from the sandbox firmware to ReBIOS.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = HypercallLib
+  FILE_GUID      = FB62B8A8-6247-47F6-BD06-4442E69E55D9
+  MODULE_TYPE    = BASE
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = HypercallLib
+
+[Sources]
+  HypercallLib.c
+
+[Sources.X64]
+  X64/Hypercall.nasm
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib

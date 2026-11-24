@@ -1,0 +1,38 @@
+## @file
+#  The sandbox's PCI platform protocol, which gives PciBusDxe the GPU's
+#  option ROM from ReBIOS's handoff.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxPciPlatformDxe
+  FILE_GUID      = 03F2AF4B-05CD-4F71-93C6-7BC25C655753
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = SandboxPciPlatformDxeEntry
+
+[Sources]
+  SandboxPciPlatformDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  HobLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid   ## CONSUMES
+
+[Protocols]
+  gEfiPciIoProtocolGuid          ## CONSUMES
+  gEfiPciPlatformProtocolGuid    ## PRODUCES
+
+[Depex]
+  TRUE

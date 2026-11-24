@@ -1,0 +1,37 @@
+## @file
+#  The sandbox firmware's PCI configuration space, reached through hypercalls,
+#  only the GPU and its bridges until PCI enumeration completes.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxPciSegmentLib
+  FILE_GUID      = 825A3DC5-00E3-4DF9-BAD1-B3879CCAEF00
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = PciSegmentLib|DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR    = SandboxPciSegmentLibConstructor
+
+[Sources]
+  SandboxPciSegmentLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  HobLib
+  HypercallLib
+  UefiBootServicesTableLib
+  UefiLib
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid             ## CONSUMES
+
+[Protocols]
+  gEfiPciEnumerationCompleteProtocolGuid   ## NOTIFY

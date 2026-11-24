@@ -1,0 +1,25 @@
+## @file
+#  The sandbox's real time clock: the platform's time, from ReBIOS.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxRealTimeClockLib
+  FILE_GUID      = 3A5A87AB-B7E0-4BDC-A833-DD621156A41F
+  MODULE_TYPE    = BASE
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = RealTimeClockLib
+
+[Sources]
+  SandboxRealTimeClockLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  HypercallLib

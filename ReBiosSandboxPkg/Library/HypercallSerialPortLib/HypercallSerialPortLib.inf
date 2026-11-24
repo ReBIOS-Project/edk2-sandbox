@@ -1,0 +1,25 @@
+## @file
+#  The serial port of the sandbox firmware's debug output, which goes to
+#  ReBIOS's log through a hypercall.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = HypercallSerialPortLib
+  FILE_GUID      = 571D9000-970D-4567-BCE2-F7F60402A57D
+  MODULE_TYPE    = BASE
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = SerialPortLib
+
+[Sources]
+  HypercallSerialPortLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  HypercallLib

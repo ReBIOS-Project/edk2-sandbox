@@ -1,0 +1,25 @@
+## @file
+#  ReBIOS's sandbox firmware: an EDK II platform on which ReBIOS runs a
+#  graphics card's own GOP driver again, in a VM of its own.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  DEC_SPECIFICATION = 0x00010005
+  PACKAGE_NAME      = ReBiosSandboxPkg
+  PACKAGE_GUID      = 8155B6BB-D52A-4F03-8373-9E7A299A9DC9
+  PACKAGE_VERSION   = 0.1
+
+[Includes]
+  Include
+
+[LibraryClasses]
+  ##  @libraryclass  Hypercalls to ReBIOS.
+  HypercallLib|Include/Library/HypercallLib.h
+
+[Guids]
+  gReBiosSandboxPkgTokenSpaceGuid = { 0xb89fd48d, 0x611f, 0x47d0, { 0x8a, 0x49, 0x62, 0x13, 0x60, 0xd4, 0x5d, 0x91 } }
+  ## The HOB holding ReBIOS's handoff, REBIOS_SANDBOX_HANDOFF, for DXE.
+  gReBiosSandboxHandoffHobGuid    = { 0x71bef175, 0x2210, 0x4cd9, { 0xb4, 0x94, 0xea, 0xf5, 0x80, 0xf9, 0x3e, 0x43 } }

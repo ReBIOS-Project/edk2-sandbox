@@ -1,0 +1,32 @@
+## @file
+#  The sandbox's PCI root bridge, from ReBIOS's handoff.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxPciHostBridgeLib
+  FILE_GUID      = F18F1414-41D6-4B76-BF81-B1ACB0EFD677
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = PciHostBridgeLib|DXE_DRIVER
+
+[Sources]
+  SandboxPciHostBridgeLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  DevicePathLib
+  HobLib
+  MemoryAllocationLib
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid   ## CONSUMES

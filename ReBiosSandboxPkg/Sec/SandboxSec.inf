@@ -1,0 +1,40 @@
+## @file
+#  The sandbox firmware's entry point, which describes the sandbox in HOBs and
+#  starts DxeCore.
+#
+#  Copyright (c) 2026, Mintsuki and contributors.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = SandboxSec
+  FILE_GUID      = 89EBC58B-BAFA-4211-9FEE-458E1A30454B
+  MODULE_TYPE    = SEC
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = _ModuleEntryPoint
+
+[Sources]
+  SandboxSec.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  UefiPayloadPkg/UefiPayloadPkg.dec
+  ReBiosSandboxPkg/ReBiosSandboxPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  CpuLib
+  DebugLib
+  HobLib
+  HypercallLib
+  MemoryAllocationLib
+  PeCoffLib
+  StackCheckLib
+  UefiCpuBaseArchSupportLib
+
+[Guids]
+  gReBiosSandboxHandoffHobGuid    ## PRODUCES
