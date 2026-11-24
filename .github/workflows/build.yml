@@ -1,0 +1,70 @@
+name: ReBIOS Sandbox Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'trunk'
+
+jobs:
+  build:
+    name: ReBIOS Sandbox Build
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    steps:
+      - name: Install dependencies
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git wget python acpica nasm
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Git config
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build
+        run: |
+          set -ex
+
+          GCC_VERSION=16.2.0
+
+          wget https://mirrors.edge.kernel.org/pub/tools/crosstool/files/bin/x86_64/$GCC_VERSION/x86_64-gcc-$GCC_VERSION-nolibc-x86_64-linux.tar.gz
+          tar -xf x86_64-gcc-$GCC_VERSION-nolibc-x86_64-linux.tar.gz
+          export PATH="$(pwd -P)"/gcc-$GCC_VERSION-nolibc/x86_64-linux/bin:"$PATH"
+
+          # EDK II resolves the native (X64) tool paths from ENV(GCC_BIN), which
+          # defaults to empty and so picks the host gcc.
+          export GCC_BIN=x86_64-linux-
+
+          EDK2_TAG=$(cat EDK2_TAG)
+          echo "EDK2_TAG=$EDK2_TAG" >> $GITHUB_ENV
+
+          git clone --recursive --depth=1 --branch "$EDK2_TAG" https://github.com/tianocore/edk2.git
+
+          ./build.sh edk2
+
+      - name: Set TAG_DATE variable
+        run: echo "TAG_DATE=$(date -u +'%Y%m%dT%H%M%SZ')" >> $GITHUB_ENV
+
+      - name: Create release tarball
+        run: |
+          set -e
+          mv output edk2-sandbox-bins
+          cp License.txt edk2-sandbox-bins/
+          tar -zcvf edk2-sandbox-bins.tar.gz edk2-sandbox-bins
+          tar -Jcvf edk2-sandbox-bins.tar.xz edk2-sandbox-bins
+
+      - name: Tag new release
+        run: git tag $TAG_DATE && git push --tags
+
+      - name: Create release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ env.EDK2_TAG }} (${{ env.TAG_DATE }})
+          tag_name: ${{ env.TAG_DATE }}
+          body: ReBIOS's sandbox firmware, ReBiosSandboxPkg built on EDK II `${{ env.EDK2_TAG }}`.
+          files: |
+            edk2-sandbox-bins.tar.gz
+            edk2-sandbox-bins.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
